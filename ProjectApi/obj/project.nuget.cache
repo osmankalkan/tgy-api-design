@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "5CqRJ/QDTAo=",
+  "success": true,
+  "projectFilePath": "/Users/osmankalkan/BackendTGY/ProjectApi/ProjectApi.csproj",
+  "expectedPackageFiles": [
+    "/Users/osmankalkan/.nuget/packages/microsoft.aspnetcore.openapi/10.0.11/microsoft.aspnetcore.openapi.10.0.11.nupkg.sha512",
+    "/Users/osmankalkan/.nuget/packages/microsoft.openapi/2.7.5/microsoft.openapi.2.7.5.nupkg.sha512"
+  ],
+  "logs": []
+}
