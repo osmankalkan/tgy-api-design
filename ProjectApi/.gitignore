@@ -1,0 +1,27 @@
+
+cat << 'EOF' > .gitignore
+# .NET Build Results
+[Bb]in/
+[Oo]j/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]uild/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# macOS System Files
+.DS_Store
+EOF
+
