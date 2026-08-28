@@ -1,4 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ProjectApi.Data;
+using ProjectApi.DTOs;
+using ProjectApi.Models;
 namespace ProjectApi.Controllers
 {
     [ApiController]
@@ -6,64 +10,100 @@ namespace ProjectApi.Controllers
 
     public class ProductController : ControllerBase
     {
-        private static List<string> products = new List<string>
+        private readonly AppDbContext _context;
+        public ProductController(AppDbContext context)
         {
-            "Laptop",
-            "Telefon",
-            "Kulaklık"
-        };
+            _context = context;
+        }
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
+            var products = await _context.Products.Where(p => p.IsActive).Select(p => new ProductResponse
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                Price = p.Price,
+                StockQuantity = p.StockQuantity,
+            }).ToListAsync();
             return Ok(products);
         }  
-        [HttpGet("{index}")]
-        public IActionResult GetByIndex(int index)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
         {
-            if (index < 0 || index >= products.Count)
+            var products = await _context.Products.FindAsync(id);
+
+            if (products == null || !products.IsActive)
             {
-                return NotFound("Ürün Bulunamadı");
+                return NotFound(new { message = "Ürün Bulunamadı" });
             }
-            return Ok(products[index]);
+            var response = new ProductResponse
+            {
+                Id = products.Id,
+                Name = products.Name,
+                Description = products.Description,
+                Price = products.Price,
+                StockQuantity = products.StockQuantity,
+            };
+            return Ok(response);
         }
 
         [HttpPost]
-        public ActionResult< string> Create([FromBody] string productName)
+        public async Task<IActionResult<ProductResponse>> Create([FromBody] CreateProductRequest request)
         {
-            if (string.IsNullOrWhiteSpace(productName))
+            var product = new Product
             {
-                return BadRequest("Ürün Adı Boş Olamaz");
-            }
-            products.Add(productName);
-            return CreatedAtAction(nameof(GetByIndex), new { index = products.Count - 1 }, "Ürün Eklendi");
-
+                Name = request.Name,
+                Description = request.Description,
+                Price = request.Price,
+                StockQuantity = request.StockQuantity,
+                IsActive = true
+            };
+            await _context.Products.AddAsync(product);
+            await _context.SaveChangesAsync();
+            var response = new ProductResponse
+            {
+                Id = product.Id,
+                Name = product.Name,
+                Description = product.Description,
+                Price = product.Price,
+                StockQuantity = product.StockQuantity,
+            };
+            return (IActionResult<ProductResponse>)CreatedAtAction(nameof(GetById), new { id = product.Id }, response);
         }
 
-        [HttpPut("{index}")]
-        public IActionResult Update(int index, [FromBody] string newName)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateProductRequest request)
         {
-            if (index < 0 || index >= products.Count)
+            var product = await _context.Products.FindAsync(id);
+            if (product == null || !product.IsActive)
             {
-                return NotFound("Ürün Bulunamadı");
+                return NotFound(new { message = "Ürün Bulunamadı" });
             }
-            if (string.IsNullOrWhiteSpace(newName))
-            {
-                return BadRequest("Ürün Adı Boş Olamaz");
-            }
-            products[index] = newName;
+            product.Name = request.Name;
+            product.Description = request.Description;
+            product.Price = request.Price;
+            product.StockQuantity = request.StockQuantity;
+            await _context.SaveChangesAsync();
             return Ok("Ürün Güncellendi");
         }
 
-        [HttpDelete("{index}")]
-        public IActionResult Delete(int index)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
         {
-            if (index < 0 || index >= products.Count)
+            var product = await _context.Products.FindAsync(id);
+            if (product == null || !product.IsActive)
             {
                 return NotFound("Ürün Bulunamadı");
             }
-            products.RemoveAt(index);
-            return Ok("Ürün Silindi");
+            product.IsActive = false;
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
+    }
+
+    public interface IActionResult<T>
+    {
     }
 }
