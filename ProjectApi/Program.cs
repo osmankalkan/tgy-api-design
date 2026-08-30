@@ -9,8 +9,18 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 
 builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
+    {
+        Title = "Project API",
+        Version = "v1",
+        Description = "Ürün yönetimi için kullanılan bir API",
+    });
+});
 
-builder.Services.AddOpenApi();
+
 
 var app = builder.Build();
 app.UseGlobalExceptionHandler(); // GlobalExceptionMiddleWare'i pipeline'a ekliyoruz
@@ -18,7 +28,12 @@ app.UseGlobalExceptionHandler(); // GlobalExceptionMiddleWare'i pipeline'a ekliy
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Project API v1");
+        options.RoutePrefix = string.Empty; // Swagger UI'yi kök dizine yönlendir
+    });
 }
 
 app.UseHttpsRedirection();
