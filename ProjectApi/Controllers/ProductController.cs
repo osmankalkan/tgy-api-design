@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectApi.Data;
 using ProjectApi.DTOs;
 using ProjectApi.Models;
+using ProjectApi.Services;
 namespace ProjectApi.Controllers
 {
     [ApiController]
@@ -10,94 +11,58 @@ namespace ProjectApi.Controllers
 
     public class ProductController : ControllerBase
     {
-        private readonly AppDbContext _context;
-        public ProductController(AppDbContext context)
+        private readonly IProductServices _productService;
+        public ProductController(IProductServices productService)
         {
-            _context = context;
+            _productService = productService;
         }
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var products = await _context.Products.Where(p => p.IsActive).Select(p => new ProductResponse
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Price = p.Price,
-                StockQuantity = p.StockQuantity,
-            }).ToListAsync();
+            var products = await _productService.GetAllAsync();
             return Ok(products);
         }  
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var products = await _context.Products.FindAsync(id);
+            var products = await _productService.GetByIdAsync(id);
 
-            if (products == null || !products.IsActive)
+            if (products == null)
             {
                 return NotFound(new { message = "Ürün Bulunamadı" });
             }
-            var response = new ProductResponse
-            {
-                Id = products.Id,
-                Name = products.Name,
-                Description = products.Description,
-                Price = products.Price,
-                StockQuantity = products.StockQuantity,
-            };
-            return Ok(response);
+            
+            return Ok(products);
         }
 
         [HttpPost]
-        public async Task<IActionResult<ProductResponse>> Create([FromBody] CreateProductRequest request)
+        public async Task<IActionResult> Create([FromBody] CreateProductRequest request)
         {
-            var product = new Product
-            {
-                Name = request.Name,
-                Description = request.Description,
-                Price = request.Price,
-                StockQuantity = request.StockQuantity,
-                IsActive = true
-            };
-            await _context.Products.AddAsync(product);
-            await _context.SaveChangesAsync();
-            var response = new ProductResponse
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Description = product.Description,
-                Price = product.Price,
-                StockQuantity = product.StockQuantity,
-            };
-            return (IActionResult<ProductResponse>)CreatedAtAction(nameof(GetById), new { id = product.Id }, response);
+            var product = await _productService.CreateAsync(request);
+            
+            return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProductRequest request)
         {
-            var product = await _context.Products.FindAsync(id);
-            if (product == null || !product.IsActive)
+            var succes = await _productService.UpdateAsync(id, request);
+            if (!succes)
             {
                 return NotFound(new { message = "Ürün Bulunamadı" });
             }
-            product.Name = request.Name;
-            product.Description = request.Description;
-            product.Price = request.Price;
-            product.StockQuantity = request.StockQuantity;
-            await _context.SaveChangesAsync();
-            return Ok("Ürün Güncellendi");
+            
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var product = await _context.Products.FindAsync(id);
-            if (product == null || !product.IsActive)
+            var succes = await _productService.DeleteAsync(id);
+            if (!succes)
             {
                 return NotFound("Ürün Bulunamadı");
             }
-            product.IsActive = false;
-            await _context.SaveChangesAsync();
             return NoContent();
         }
 

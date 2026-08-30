@@ -2,11 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.Design; 
 using ProjectApi.Data;
 using ProjectApi.MiddleWare;
+using ProjectApi.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+IServiceCollection serviceCollection = builder.Services.AddScoped<IProductServices, ProductServices>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
